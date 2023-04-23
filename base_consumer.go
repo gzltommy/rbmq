@@ -33,7 +33,7 @@ const (
 	DefaultPrefetchCount = 500
 )
 
-type ConsumeHandler func(payload []byte) (ack bool)
+type ConsumeHandler func(payload []byte) error
 
 type IConsumer interface {
 	Consume(ctx context.Context, handler ConsumeHandler) (err error)
@@ -110,8 +110,8 @@ func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler
 			return false, nil
 		case d, ok := <-deliveryChan:
 			if ok {
-				ack := handler(d.Body)
-				if !ack {
+				err = handler(d.Body)
+				if err != nil {
 					if err = d.Nack(false, true); err != nil {
 						log.Printf("deliver.Nack: %s\n", err)
 					}

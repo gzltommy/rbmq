@@ -36,10 +36,10 @@ func Simple() {
 			}
 			ctx, cancel := context.WithCancel(context.Background())
 			_ = cancel
-			err = consumer.Consume(ctx, func(payload []byte) bool {
+			err = consumer.Consume(ctx, func(payload []byte) error {
 				fmt.Printf("--%d---收到消息--------- %s \n", id, string(payload))
 				//cancel()
-				return true
+				return nil
 			})
 			if err != nil {
 				panic(err)
@@ -66,10 +66,10 @@ func PubSub() {
 
 		f := func(id int) {
 			ctx, _ := context.WithCancel(context.Background())
-			err = consumer.Consume(ctx, func(payload []byte) bool {
+			err = consumer.Consume(ctx, func(payload []byte) error {
 				fmt.Printf("--%d---收到消息--------- %s \n", id, string(payload))
 				//cancel()
-				return true
+				return nil
 			})
 			if err != nil {
 				panic(err)
@@ -94,10 +94,10 @@ func Routing() {
 
 		f := func(id int) {
 			ctx, _ := context.WithCancel(context.Background())
-			err = consumer.Consume(ctx, func(payload []byte) bool {
+			err = consumer.Consume(ctx, func(payload []byte) error {
 				fmt.Printf("--%d---收到消息--------- %s \n", id, string(payload))
 				//cancel()
-				return true
+				return nil
 			})
 			if err != nil {
 				panic(err)
