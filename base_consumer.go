@@ -51,10 +51,11 @@ type baseConsumer struct {
 func (r *baseConsumer) Consume(ctx context.Context, handler ConsumeHandler) (err error) {
 	defer func() {
 		if pErr := recover(); pErr != nil {
+			fmt.Fprintln(os.Stderr, pErr)
 			buf := debug.Stack()
-			os.Stderr.Write(buf)
+			fmt.Fprintln(os.Stderr, string(buf))
 			log.Println(pErr)
-			log.Println(string(buf))
+			log.Printf("pErr:%v.stack:%s", pErr, string(buf))
 			err = fmt.Errorf("%v", pErr)
 		}
 	}()
