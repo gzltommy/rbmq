@@ -64,8 +64,8 @@ Recon:
 	if err != nil {
 		return err
 	}
+	// 如果是连接被关闭才返回，且是异常断网，则等待重连后继续监听消费
 	if isConnClosed && !r.mqConn.IsnNormalClose() {
-		// 检查是否重连成功了
 		for r.mqConn.GetConn().IsClosed() {
 			time.Sleep(time.Second)
 		}
