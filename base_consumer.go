@@ -33,7 +33,7 @@ const (
 	DefaultPrefetchCount = 500
 )
 
-type ConsumeHandler func(payload []byte) (ok bool)
+type ConsumeHandler func(payload []byte) (ack bool)
 
 type IConsumer interface {
 	Consume(ctx context.Context, handler ConsumeHandler) (err error)
