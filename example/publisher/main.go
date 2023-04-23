@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/gzltommy/rbmq/rabbitmq"
+	"github.com/gzltommy/rbmq"
 	"time"
 )
 
@@ -16,7 +16,7 @@ const (
 
 func main() {
 	mqUrl := fmt.Sprintf("amqp://%s:%s@%s:%s/%s", UserName, Password, Host, Port, VirtualHost)
-	mqConn, err := rabbitmq.NewRMQConn(mqUrl)
+	mqConn, err := rbmq.NewRMQConn(mqUrl)
 	if err != nil {
 		panic(err)
 	}
@@ -28,8 +28,8 @@ func main() {
 	time.Sleep(time.Hour * 2)
 }
 
-func Simple(mqConn *rabbitmq.RMQConn) {
-	publisher, err := rabbitmq.NewSimplePublisher(mqConn, "test-queue", false, true)
+func Simple(mqConn *rbmq.RMQConn) {
+	publisher, err := rbmq.NewSimplePublisher(mqConn, "test-queue", false, true)
 	if err != nil {
 		panic(err)
 	}
@@ -42,8 +42,8 @@ func Simple(mqConn *rabbitmq.RMQConn) {
 	}
 }
 
-func PubSub(mqConn *rabbitmq.RMQConn) {
-	publisher, err := rabbitmq.NewSubscriptionPublisher(mqConn, "test-pub-sub-exchange", false, true)
+func PubSub(mqConn *rbmq.RMQConn) {
+	publisher, err := rbmq.NewSubscriptionPublisher(mqConn, "test-pub-sub-exchange", false, true)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func PubSub(mqConn *rabbitmq.RMQConn) {
 	}
 }
 
-func Routing(mqConn *rabbitmq.RMQConn) {
-	publisher, err := rabbitmq.NewRoutingPublisher(mqConn, "test-routing-exchange", false, true)
+func Routing(mqConn *rbmq.RMQConn) {
+	publisher, err := rbmq.NewRoutingPublisher(mqConn, "test-routing-exchange", false, true)
 	if err != nil {
 		panic(err)
 	}

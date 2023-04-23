@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gzltommy/rbmq/rabbitmq"
+	"github.com/gzltommy/rbmq"
 	"time"
 )
 
@@ -23,14 +23,14 @@ func main() {
 }
 func Simple() {
 	mqUrl := fmt.Sprintf("amqp://%s:%s@%s:%s/%s", UserName, Password, Host, Port, VirtualHost)
-	mqConn, err := rabbitmq.NewRMQConn(mqUrl)
+	mqConn, err := rbmq.NewRMQConn(mqUrl)
 	if err != nil {
 		panic(err)
 	}
 
 	for i := 0; i < 3; i++ {
 		f := func(id int) {
-			consumer, err := rabbitmq.NewSimpleConsumer(mqConn, "test-queue", fmt.Sprintf("Simple%d", id), false, true)
+			consumer, err := rbmq.NewSimpleConsumer(mqConn, "test-queue", fmt.Sprintf("Simple%d", id), false, true)
 			if err != nil {
 				panic(err)
 			}
@@ -54,12 +54,12 @@ func Simple() {
 func PubSub() {
 	for i := 0; i < 3; i++ {
 		mqUrl := fmt.Sprintf("amqp://%s:%s@%s:%s/%s", UserName, Password, Host, Port, VirtualHost)
-		mqConn, err := rabbitmq.NewRMQConn(mqUrl)
+		mqConn, err := rbmq.NewRMQConn(mqUrl)
 		if err != nil {
 			panic(err)
 		}
 
-		consumer, err := rabbitmq.NewSubscriptionConsumer(mqConn, "test-pub-sub-exchange", fmt.Sprintf("test-pub-sub-queue-%d", i), "", false, true)
+		consumer, err := rbmq.NewSubscriptionConsumer(mqConn, "test-pub-sub-exchange", fmt.Sprintf("test-pub-sub-queue-%d", i), "", false, true)
 		if err != nil {
 			panic(err)
 		}
@@ -82,12 +82,12 @@ func PubSub() {
 
 func Routing() {
 	mqUrl := fmt.Sprintf("amqp://%s:%s@%s:%s/%s", UserName, Password, Host, Port, VirtualHost)
-	mqConn, err := rabbitmq.NewRMQConn(mqUrl)
+	mqConn, err := rbmq.NewRMQConn(mqUrl)
 	if err != nil {
 		panic(err)
 	}
 	for i := 0; i < 3; i++ {
-		consumer, err := rabbitmq.NewRoutingConsumer(mqConn, "test-routing-exchange", fmt.Sprintf("test-routing-queue-%d", i+1), fmt.Sprintf("key_%d", i+1), "", false, true)
+		consumer, err := rbmq.NewRoutingConsumer(mqConn, "test-routing-exchange", fmt.Sprintf("test-routing-queue-%d", i+1), fmt.Sprintf("key_%d", i+1), "", false, true)
 		if err != nil {
 			panic(err)
 		}
