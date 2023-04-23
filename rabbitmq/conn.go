@@ -10,9 +10,8 @@ import (
 )
 
 type RMQConn struct {
-	conn        atomic.Value // 连接(*amqp.Connection)
-	mqURL       string       // 连接信息(amqp://账号:密码@主机:端口号/虚拟主机)
-	reconnectCh atomic.Value // 重连通知管道（chan struct{}）
+	conn  atomic.Value // 连接(*amqp.Connection)
+	mqURL string       // 连接信息(amqp://账号:密码@主机:端口号/虚拟主机)
 }
 
 // NewRMQConn 创建一个 RMQConn 实例
@@ -33,19 +32,10 @@ func NewRMQConn(mqUrl string) (*RMQConn, error) {
 		mqURL: mqUrl,
 	}
 	mqConn.conn.Store(conn)
-	mqConn.reconnectCh.Store(make(chan struct{}))
 
 	// 开启自动重连
 	mqConn.keepAlive()
 	return mqConn, nil
-}
-
-func (r *RMQConn) GetReconnectCh() <-chan struct{} {
-	return r.getReconnectCh()
-}
-
-func (r *RMQConn) getReconnectCh() chan struct{} {
-	return r.reconnectCh.Load().(chan struct{})
 }
 
 func (r *RMQConn) GetConn() *amqp.Connection {
@@ -67,13 +57,17 @@ func (r *RMQConn) keepAlive() {
 		err := <-r.GetConn().NotifyClose(make(chan *amqp.Error))
 		if err != nil {
 			// 异常关闭，重连
+			log.Printf("keepAlive: %v \n", err)
+			log.Printf("keepAlive: 网络断开，开始自动重连。。。\n")
 			for {
 				newCon, err := amqp.Dial(r.mqURL)
 				if err == nil {
 					r.conn.Store(newCon)
-					r.notifyReconnect()
+					log.Printf("keepAlive: 重连成功！\n")
 					goto Loop
 				}
+				log.Printf("keepAlive：%v \n", err)
+				log.Printf("keepAlive：重连失败，1s 后重试！\n")
 				time.Sleep(time.Second)
 			}
 		} else {
@@ -81,11 +75,6 @@ func (r *RMQConn) keepAlive() {
 			log.Println("keepAlive: rabbitmq connection closing")
 		}
 	}()
-}
-
-func (r *RMQConn) notifyReconnect() {
-	close(r.getReconnectCh())
-	r.reconnectCh.Store(make(chan struct{}))
 }
 
 // Close 关闭连接

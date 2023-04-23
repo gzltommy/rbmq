@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
+	"time"
 )
 
 /*
@@ -64,6 +65,10 @@ Recon:
 		return err
 	}
 	if isReconnect {
+		// 检查是否重连成功了
+		for r.mqConn.GetConn().IsClosed() {
+			time.Sleep(time.Second)
+		}
 		goto Recon
 	}
 	return nil
@@ -98,25 +103,27 @@ func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler
 	if err != nil {
 		return false, err
 	}
-	reconCh := r.mqConn.GetReconnectCh()
 	for {
 		select {
-		case <-reconCh:
-			log.Println("...断线重连...")
-			return true, nil
 		case <-ctx.Done():
-			log.Println("消费者退出监听！！！")
+			log.Println("consumeHandle：消费者退出监听！")
 			return false, nil
-		case d := <-deliveryChan:
-			ack := handler(d.Body)
-			if !ack {
-				if err = d.Nack(false, true); err != nil {
-					log.Printf("deliver.Nack: %s\n", err)
+		case d, ok := <-deliveryChan:
+			if ok {
+				ack := handler(d.Body)
+				if !ack {
+					if err = d.Nack(false, true); err != nil {
+						log.Printf("deliver.Nack: %s\n", err)
+					}
+				} else {
+					if err = d.Ack(false); err != nil {
+						log.Printf("deliver.Ack: %s\n", err)
+					}
 				}
 			} else {
-				if err = d.Ack(false); err != nil {
-					log.Printf("deliver.Ack: %s\n", err)
-				}
+				// 断网通道被关闭
+				log.Println("consumeHandle：deliveryChan closed！")
+				return true, nil
 			}
 		}
 	}
