@@ -10,8 +10,9 @@ import (
 )
 
 type RMQConn struct {
-	conn  atomic.Value // 连接(*amqp.Connection)
-	mqURL string       // 连接信息(amqp://账号:密码@主机:端口号/虚拟主机)
+	conn        atomic.Value // 连接(*amqp.Connection)
+	mqURL       string       // 连接信息(amqp://账号:密码@主机:端口号/虚拟主机)
+	normalClose atomic.Bool  // 是否是正常关闭
 }
 
 // NewRMQConn 创建一个 RMQConn 实例
@@ -32,6 +33,7 @@ func NewRMQConn(mqUrl string) (*RMQConn, error) {
 		mqURL: mqUrl,
 	}
 	mqConn.conn.Store(conn)
+	mqConn.normalClose.Store(false)
 
 	// 开启自动重连
 	mqConn.keepAlive()
@@ -40,6 +42,9 @@ func NewRMQConn(mqUrl string) (*RMQConn, error) {
 
 func (r *RMQConn) GetConn() *amqp.Connection {
 	return r.conn.Load().(*amqp.Connection)
+}
+func (r *RMQConn) IsnNormalClose() bool {
+	return r.normalClose.Load()
 }
 
 // keepAlive amqp 断开自动重连
@@ -72,6 +77,7 @@ func (r *RMQConn) keepAlive() {
 			}
 		} else {
 			// 正常关闭不重连
+			r.normalClose.Store(true)
 			log.Println("keepAlive: rabbitmq connection closing")
 		}
 	}()

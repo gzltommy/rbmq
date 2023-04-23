@@ -59,12 +59,12 @@ func (r *baseConsumer) Consume(ctx context.Context, handler ConsumeHandler) (err
 		}
 	}()
 Recon:
-	var isReconnect bool
-	isReconnect, err = r.consumeHandle(ctx, handler)
+	var isConnClosed bool
+	isConnClosed, err = r.consumeHandle(ctx, handler)
 	if err != nil {
 		return err
 	}
-	if isReconnect {
+	if isConnClosed && !r.mqConn.IsnNormalClose() {
 		// 检查是否重连成功了
 		for r.mqConn.GetConn().IsClosed() {
 			time.Sleep(time.Second)
@@ -121,7 +121,7 @@ func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler
 					}
 				}
 			} else {
-				// 断网通道被关闭
+				// 通道被关闭，可能是异常断网，也可能是正常关闭网络
 				log.Println("consumeHandle：deliveryChan closed！")
 				return true, nil
 			}
