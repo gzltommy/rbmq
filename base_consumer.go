@@ -36,7 +36,7 @@ const (
 type ConsumeHandler func(payload []byte) error
 
 type IConsumer interface {
-	Consume(ctx context.Context, handler ConsumeHandler) (err error)
+	Consume(ctx context.Context, handler ConsumeHandler) (err error) // 该方法会阻塞调用，建议开启一个单独的 goroutine 调用
 }
 
 type baseConsumer struct {
@@ -47,7 +47,6 @@ type baseConsumer struct {
 	consumer      string // 消费名
 }
 
-// Consume  该方法会阻塞调用，一般都用一个独立的 goroutine 调用该方法
 func (r *baseConsumer) Consume(ctx context.Context, handler ConsumeHandler) (err error) {
 	defer func() {
 		if pErr := recover(); pErr != nil {
