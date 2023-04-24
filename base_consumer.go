@@ -106,7 +106,7 @@ func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("consumeHandle：消费者退出监听！")
+			log.Println("consumeHandle：consumer quit listen msg！")
 			return false, nil
 		case d, ok := <-deliveryChan:
 			if ok {

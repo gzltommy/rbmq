@@ -63,16 +63,16 @@ func (r *RMQConn) keepAlive() {
 		if err != nil {
 			// 异常关闭，重连
 			log.Printf("keepAlive: %v \n", err)
-			log.Printf("keepAlive: 网络断开，开始自动重连。。。\n")
+			log.Printf("keepAlive: network connection lost,auto-reconnect started。。。\n")
 			for {
 				newCon, err := amqp.Dial(r.mqURL)
 				if err == nil {
 					r.conn.Store(newCon)
-					log.Printf("keepAlive: 重连成功！\n")
+					log.Printf("keepAlive: auto-reconnect successfully！\n")
 					goto Loop
 				}
 				log.Printf("keepAlive：%v \n", err)
-				log.Printf("keepAlive：重连失败，1s 后重试！\n")
+				log.Printf("keepAlive：automatic reconnection failed, continue to reconnect after 1 second！\n")
 				time.Sleep(time.Second)
 			}
 		} else {
