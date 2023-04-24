@@ -94,7 +94,7 @@ func (r *RoutingPublisher) Publish(message []byte, routingKey string, expiration
 }
 
 type RoutingConsumer struct {
-	*baseConsumer
+	*BaseConsumer
 }
 
 // NewRoutingConsumer
@@ -116,14 +116,8 @@ func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey, cons
 	if len(routingKey) == 0 {
 		return nil, RoutingKeyIsRequired
 	}
-	r := &RoutingConsumer{}
-	r.baseConsumer = &baseConsumer{
-		mqConn:        conn,
-		prefetchCount: DefaultPrefetchCount,
-		iC:            r,
-		consumer:      consumer,
-	}
-	channel, err := r.mqConn.GetConn().Channel()
+
+	channel, err := conn.GetConn().Channel()
 	if err != nil {
 		return nil, err
 	}
@@ -156,12 +150,9 @@ func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey, cons
 	if err != nil {
 		return nil, err
 	}
-
-	r.queueName = q.Name
-
 	//3、绑定队列到 exchange中
 	err = channel.QueueBind(
-		r.queueName,
+		q.Name,
 		routingKey, // 绑定关系中的 key
 		exchangeName,
 		false,
@@ -171,5 +162,7 @@ func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey, cons
 		return nil, err
 	}
 
-	return r, nil
+	c := &RoutingConsumer{}
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+	return c, nil
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/gzltommy/rbmq"
 	"time"
@@ -34,9 +33,7 @@ func Simple() {
 			if err != nil {
 				panic(err)
 			}
-			ctx, cancel := context.WithCancel(context.Background())
-			_ = cancel
-			err = consumer.Consume(ctx, func(payload []byte) error {
+			err = consumer.Consume(func(payload []byte) error {
 				fmt.Printf("--%d---收到消息--------- %s \n", id, string(payload))
 				//cancel()
 				return nil
@@ -65,8 +62,7 @@ func PubSub() {
 		}
 
 		f := func(id int) {
-			ctx, _ := context.WithCancel(context.Background())
-			err = consumer.Consume(ctx, func(payload []byte) error {
+			err = consumer.Consume(func(payload []byte) error {
 				fmt.Printf("--%d---收到消息--------- %s \n", id, string(payload))
 				//cancel()
 				return nil
@@ -93,8 +89,7 @@ func Routing() {
 		}
 
 		f := func(id int) {
-			ctx, _ := context.WithCancel(context.Background())
-			err = consumer.Consume(ctx, func(payload []byte) error {
+			err = consumer.Consume(func(payload []byte) error {
 				fmt.Printf("--%d---收到消息--------- %s \n", id, string(payload))
 				//cancel()
 				return nil

@@ -1,7 +1,6 @@
 package rbmq
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -36,18 +35,31 @@ const (
 type ConsumeHandler func(payload []byte) error
 
 type IConsumer interface {
-	Consume(ctx context.Context, handler ConsumeHandler) (err error) // 该方法会阻塞调用，建议开启一个单独的 goroutine 调用
+	Consume(handler ConsumeHandler) (err error) // 该方法会阻塞调用，建议开启一个单独的 goroutine 调用
+	Stop()                                      // 停止监听，注意不会关闭连接，因为连接可能不是独占的
 }
 
-type baseConsumer struct {
+type BaseConsumer struct {
 	iC            IConsumer
 	mqConn        *RMQConn //连接
 	prefetchCount int
-	queueName     string // 队列名
-	consumer      string // 消费名
+	queueName     string        // 队列名
+	consumer      string        // 消费名
+	stopChan      chan struct{} // 停止监听
 }
 
-func (r *baseConsumer) Consume(ctx context.Context, handler ConsumeHandler) (err error) {
+func NewBaseConsumer(conn *RMQConn, prefetchCount int, queueName, consumer string, iC IConsumer) *BaseConsumer {
+	return &BaseConsumer{
+		iC:            iC,
+		mqConn:        conn,
+		prefetchCount: prefetchCount,
+		queueName:     queueName,
+		consumer:      consumer,
+		stopChan:      make(chan struct{}),
+	}
+}
+
+func (c *BaseConsumer) Consume(handler ConsumeHandler) (err error) {
 	defer func() {
 		if pErr := recover(); pErr != nil {
 			fmt.Fprintln(os.Stderr, pErr)
@@ -60,13 +72,13 @@ func (r *baseConsumer) Consume(ctx context.Context, handler ConsumeHandler) (err
 	}()
 Recon:
 	var isConnClosed bool
-	isConnClosed, err = r.consumeHandle(ctx, handler)
+	isConnClosed, err = c.consumeHandle(handler)
 	if err != nil {
 		return err
 	}
 	// 如果是连接被关闭才返回，且是异常断网，则等待重连后继续监听消费
-	if isConnClosed && !r.mqConn.IsnNormalClose() {
-		for r.mqConn.GetConn().IsClosed() {
+	if isConnClosed && !c.mqConn.IsnNormalClose() {
+		for c.mqConn.GetConn().IsClosed() {
 			time.Sleep(time.Second)
 		}
 		goto Recon
@@ -74,15 +86,15 @@ Recon:
 	return nil
 }
 
-func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler) (bool, error) {
-	channel, err := r.mqConn.GetConn().Channel()
+func (c *BaseConsumer) consumeHandle(handler ConsumeHandler) (bool, error) {
+	channel, err := c.mqConn.GetConn().Channel()
 	if err != nil {
 		return false, err
 	}
 	defer channel.Close()
 
 	err = channel.Qos(
-		r.prefetchCount, // prefetch count
+		c.prefetchCount, // prefetch count
 		0,               // prefetch size
 		false,           // global
 	)
@@ -92,8 +104,8 @@ func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler
 
 	// 消费消息
 	deliveryChan, err := channel.Consume(
-		r.queueName, // 引用前面的队列名
-		r.consumer,  // 消费者名字，不填自动生成一个
+		c.queueName, // 引用前面的队列名
+		c.consumer,  // 消费者名字，不填自动生成一个
 		false,       // 自动向队列确认消息已经处理
 		false,       // exclusive
 		false,       // no-local
@@ -105,7 +117,7 @@ func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler
 	}
 	for {
 		select {
-		case <-ctx.Done():
+		case <-c.stopChan:
 			log.Println("consumeHandle：consumer quit listen msg！")
 			return false, nil
 		case d, ok := <-deliveryChan:
@@ -127,4 +139,8 @@ func (r *baseConsumer) consumeHandle(ctx context.Context, handler ConsumeHandler
 			}
 		}
 	}
+}
+
+func (c *BaseConsumer) Stop() {
+	close(c.stopChan)
 }

@@ -94,7 +94,7 @@ func (r *SimplePublisher) Publish(message []byte, expirationSecond uint64) (err 
 }
 
 type SimpleConsumer struct {
-	*baseConsumer
+	*BaseConsumer
 }
 
 // NewSimpleConsumer 创建简单模式下的实例，只需要 queueName 这个参数，其中 exchange 是默认的，key 则不需要。
@@ -110,15 +110,7 @@ func NewSimpleConsumer(conn *RMQConn, queueName, consumer string, durable, autoD
 	if queueName == "" {
 		return nil, QueueNameIsEmpty
 	}
-	r := &SimpleConsumer{}
-	r.baseConsumer = &baseConsumer{
-		mqConn:        conn,
-		prefetchCount: DefaultPrefetchCount,
-		iC:            r,
-		consumer:      consumer,
-	}
-
-	channel, err := r.mqConn.GetConn().Channel()
+	channel, err := conn.GetConn().Channel()
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +128,7 @@ func NewSimpleConsumer(conn *RMQConn, queueName, consumer string, durable, autoD
 	if err != nil {
 		return nil, err
 	}
-	r.queueName = q.Name
-	return r, nil
+	c := &SimpleConsumer{}
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+	return c, nil
 }

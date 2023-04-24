@@ -93,7 +93,7 @@ func (r *TopicPublisher) Publish(message []byte, routingKey string, expirationSe
 }
 
 type TopicConsumer struct {
-	*baseConsumer
+	*BaseConsumer
 }
 
 // NewTopicConsumer 获取话题模式下的 rabbitmq 的实例
@@ -116,15 +116,7 @@ func NewTopicConsumer(conn *RMQConn, exchangeName, queueName, routingKey, consum
 		return nil, RoutingKeyIsRequired
 	}
 
-	r := &TopicConsumer{}
-	r.baseConsumer = &baseConsumer{
-		mqConn:        conn,
-		prefetchCount: DefaultPrefetchCount,
-		iC:            r,
-		consumer:      consumer,
-	}
-
-	channel, err := r.mqConn.GetConn().Channel()
+	channel, err := conn.GetConn().Channel()
 	if err != nil {
 		return nil, err
 	}
@@ -156,11 +148,10 @@ func NewTopicConsumer(conn *RMQConn, exchangeName, queueName, routingKey, consum
 	if err != nil {
 		return nil, err
 	}
-	r.queueName = q.Name
 
 	//2 将队列绑定到交换机里。
 	err = channel.QueueBind(
-		r.queueName,
+		q.Name,
 		routingKey,
 		exchangeName,
 		false,
@@ -170,5 +161,8 @@ func NewTopicConsumer(conn *RMQConn, exchangeName, queueName, routingKey, consum
 		return nil, err
 	}
 
-	return r, nil
+	c := &TopicConsumer{}
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+
+	return c, nil
 }

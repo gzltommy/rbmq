@@ -89,7 +89,7 @@ func (r *SubscriptionPublisher) Publish(message []byte, expirationSecond uint64)
 }
 
 type SubscriptionConsumer struct {
-	*baseConsumer
+	*BaseConsumer
 }
 
 // NewSubscriptionConsumer 获取订阅模式下的 rabbitmq 的实例
@@ -106,14 +106,7 @@ func NewSubscriptionConsumer(conn *RMQConn, exchangeName, queueName, consumer st
 	if exchangeName == "" {
 		return nil, ExchangeNameIsEmpty
 	}
-	r := &SubscriptionConsumer{}
-	r.baseConsumer = &baseConsumer{
-		mqConn:        conn,
-		prefetchCount: DefaultPrefetchCount,
-		iC:            r,
-		consumer:      consumer,
-	}
-	channel, err := r.mqConn.GetConn().Channel()
+	channel, err := conn.GetConn().Channel()
 	if err != nil {
 		return nil, err
 	}
@@ -145,11 +138,10 @@ func NewSubscriptionConsumer(conn *RMQConn, exchangeName, queueName, consumer st
 	if err != nil {
 		return nil, err
 	}
-	r.queueName = q.Name
 
 	//3、绑定队列到交换机中
 	err = channel.QueueBind(
-		r.queueName,  // 队列名
+		q.Name,       // 队列名
 		"",           // key 路由参数，fanout 类型交换机，自动忽略路由参数
 		exchangeName, // 交换机名字，需要跟消息发送端定义的交换器保持一致
 		false,
@@ -158,5 +150,7 @@ func NewSubscriptionConsumer(conn *RMQConn, exchangeName, queueName, consumer st
 	if err != nil {
 		return nil, err
 	}
-	return r, nil
+	c := &SubscriptionConsumer{}
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+	return c, nil
 }
