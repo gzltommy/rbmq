@@ -29,7 +29,7 @@ func Simple() {
 
 	for i := 0; i < 3; i++ {
 		f := func(id int) {
-			consumer, err := rbmq.NewSimpleConsumer(mqConn, "test-queue", fmt.Sprintf("Simple%d", id), false, true)
+			consumer, err := rbmq.NewSimpleConsumer(mqConn, "test-queue", false, true)
 			if err != nil {
 				panic(err)
 			}
@@ -56,7 +56,7 @@ func PubSub() {
 			panic(err)
 		}
 
-		consumer, err := rbmq.NewSubscriptionConsumer(mqConn, "test-pub-sub-exchange", fmt.Sprintf("test-pub-sub-queue-%d", i), "", false, true)
+		consumer, err := rbmq.NewSubscriptionConsumer(mqConn, "test-pub-sub-exchange", fmt.Sprintf("test-pub-sub-queue-%d", i), false, true)
 		if err != nil {
 			panic(err)
 		}
@@ -83,7 +83,7 @@ func Routing() {
 		panic(err)
 	}
 	for i := 0; i < 3; i++ {
-		consumer, err := rbmq.NewRoutingConsumer(mqConn, "test-routing-exchange", fmt.Sprintf("test-routing-queue-%d", i+1), fmt.Sprintf("key_%d", i+1), "", false, true)
+		consumer, err := rbmq.NewRoutingConsumer(mqConn, "test-routing-exchange", fmt.Sprintf("test-routing-queue-%d", i+1), fmt.Sprintf("key_%d", i+1), false, true)
 		if err != nil {
 			panic(err)
 		}

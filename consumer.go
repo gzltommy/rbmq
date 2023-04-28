@@ -44,17 +44,15 @@ type BaseConsumer struct {
 	mqConn        *RMQConn //连接
 	prefetchCount int
 	queueName     string        // 队列名
-	consumer      string        // 消费名
 	stopChan      chan struct{} // 停止监听
 }
 
-func NewBaseConsumer(conn *RMQConn, prefetchCount int, queueName, consumer string, iC IConsumer) *BaseConsumer {
+func NewBaseConsumer(conn *RMQConn, prefetchCount int, queueName string, iC IConsumer) *BaseConsumer {
 	return &BaseConsumer{
 		iC:            iC,
 		mqConn:        conn,
 		prefetchCount: prefetchCount,
 		queueName:     queueName,
-		consumer:      consumer,
 		stopChan:      make(chan struct{}),
 	}
 }
@@ -105,7 +103,7 @@ func (c *BaseConsumer) consumeHandle(handler ConsumeHandler) (bool, error) {
 	// 消费消息
 	deliveryChan, err := channel.Consume(
 		c.queueName, // 引用前面的队列名
-		c.consumer,  // 消费者名字，不填自动生成一个
+		"",          // 消费者名字，不填自动生成一个
 		false,       // 自动向队列确认消息已经处理
 		false,       // exclusive
 		false,       // no-local

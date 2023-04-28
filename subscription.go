@@ -17,7 +17,7 @@ type SubscriptionPublisher struct {
 	exchangeName string
 }
 
-// NewSubscriptionPublisher
+// NewSubscriptionPublisher 创建订阅模式下的 publisher
 // conn：rabbit mq 连接
 // exchangeName：不能为空
 // durable：持久化
@@ -92,20 +92,20 @@ type SubscriptionConsumer struct {
 	*BaseConsumer
 }
 
-// NewSubscriptionConsumer 获取订阅模式下的 rabbitmq 的实例
+// NewSubscriptionConsumer 创建订阅模式下的 consumer
 // conn：rabbit mq 连接
 // exchangeName：必填参数
-// queueName：为空时，自动生成
-// consumer：为空时，自动生成
+// queueName：为空时，自动生成，为空时，队列强制为非持久化和自动删除
 // durable：是否需要持久化
 // autoDelete：是否需要自动删除
-func NewSubscriptionConsumer(conn *RMQConn, exchangeName, queueName, consumer string, durable, autoDelete bool) (IConsumer, error) {
+func NewSubscriptionConsumer(conn *RMQConn, exchangeName, queueName string, durable, autoDelete bool) (IConsumer, error) {
 	if conn == nil {
 		return nil, ConnIsNil
 	}
 	if exchangeName == "" {
 		return nil, ExchangeNameIsEmpty
 	}
+
 	channel, err := conn.GetConn().Channel()
 	if err != nil {
 		return nil, err
@@ -124,6 +124,12 @@ func NewSubscriptionConsumer(conn *RMQConn, exchangeName, queueName, consumer st
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	// 队列名为空时，队列强制为非持久化和自动删除
+	if queueName == "" {
+		durable = false
+		autoDelete = true
 	}
 
 	//2、申请队列,如果队列不存在则创建,存在则跳过
@@ -151,6 +157,6 @@ func NewSubscriptionConsumer(conn *RMQConn, exchangeName, queueName, consumer st
 		return nil, err
 	}
 	c := &SubscriptionConsumer{}
-	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, c)
 	return c, nil
 }

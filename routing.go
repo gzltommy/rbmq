@@ -17,12 +17,11 @@ type RoutingPublisher struct {
 	exchangeName string
 }
 
-// NewRoutingPublisher
+// NewRoutingPublisher 创建 Routing 模式下的 publisher
 // conn：rabbit mq 连接
 // exchangeName：不能为空
 // queueName：可为空，为空则自动生成
 // routingKey：绑定路由
-// consumer：消费者名
 // durable：持久化
 // autoDelete：自动删除
 func NewRoutingPublisher(conn *RMQConn, exchangeName string, durable, autoDelete bool) (*RoutingPublisher, error) {
@@ -97,15 +96,14 @@ type RoutingConsumer struct {
 	*BaseConsumer
 }
 
-// NewRoutingConsumer
+// NewRoutingConsumer 创建 Routing 模式下的 consumer
 // conn：rabbit mq 连接
 // exchangeName：不能为空
-// queueName：可为空，为空则自动生成
+// queueName：可为空，为空则自动生成，队列名为空时，队列强制为非持久化和自动删除
 // routingKey：绑定路由,不能为空
-// consumer：消费者名,可为空
 // durable：持久化
 // autoDelete：自动删除
-func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey, consumer string, durable, autoDelete bool) (IConsumer, error) {
+func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey string, durable, autoDelete bool) (IConsumer, error) {
 	if conn == nil {
 		return nil, ConnIsNil
 	}
@@ -138,6 +136,12 @@ func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey, cons
 		return nil, err
 	}
 
+	// 队列名为空时，队列强制为非持久化和自动删除
+	if queueName == "" {
+		durable = false
+		autoDelete = true
+	}
+
 	//2、 试探性创建队列
 	q, err := channel.QueueDeclare(
 		queueName,  // 队列名字
@@ -163,6 +167,6 @@ func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey, cons
 	}
 
 	c := &RoutingConsumer{}
-	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, c)
 	return c, nil
 }

@@ -17,7 +17,7 @@ type TopicPublisher struct {
 	exchangeName string
 }
 
-// NewTopicPublisher
+// NewTopicPublisher 创建 Topic 模式下的 publisher
 // conn：rabbit mq 连接
 // exchangeName：不能为空
 // durable：持久化
@@ -96,15 +96,14 @@ type TopicConsumer struct {
 	*BaseConsumer
 }
 
-// NewTopicConsumer 获取话题模式下的 rabbitmq 的实例
+// NewTopicConsumer 创建 Topic 模式下的 consumer
 // conn：rabbit mq 连接
 // exchangeName:必填参数，不能为空
-// queueName:可为空，为空则自动生成
+// queueName:可为空，为空则自动生成，队列名为空时，队列强制为非持久化和自动删除
 // routingKey:不能为空
-// consumer:可为空，为空则自动生成
 // durable：持久化
 // autoDelete：自动删除
-func NewTopicConsumer(conn *RMQConn, exchangeName, queueName, routingKey, consumer string, durable, autoDelete bool) (IConsumer, error) {
+func NewTopicConsumer(conn *RMQConn, exchangeName, queueName, routingKey string, durable, autoDelete bool) (IConsumer, error) {
 	if conn == nil {
 		return nil, ConnIsNil
 	}
@@ -136,6 +135,12 @@ func NewTopicConsumer(conn *RMQConn, exchangeName, queueName, routingKey, consum
 		return nil, err
 	}
 
+	// 队列名为空时，队列强制为非持久化和自动删除
+	if queueName == "" {
+		durable = false
+		autoDelete = true
+	}
+
 	//2 尝试创建队列，存在自动跳过
 	q, err := channel.QueueDeclare(
 		queueName,
@@ -162,7 +167,7 @@ func NewTopicConsumer(conn *RMQConn, exchangeName, queueName, routingKey, consum
 	}
 
 	c := &TopicConsumer{}
-	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, c)
 
 	return c, nil
 }

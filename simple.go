@@ -21,7 +21,7 @@ type SimplePublisher struct {
 	queueName string   // 生成的队列名称
 }
 
-// NewSimplePublisher
+// NewSimplePublisher 创建简单模式下的 publisher
 // conn：rabbit mq 连接
 // queueName:不能为空
 // durable：持久化
@@ -97,13 +97,12 @@ type SimpleConsumer struct {
 	*BaseConsumer
 }
 
-// NewSimpleConsumer 创建简单模式下的实例，只需要 queueName 这个参数，其中 exchange 是默认的，key 则不需要。
+// NewSimpleConsumer 创建简单模式下的 consumer
 // conn：rabbit mq 连接
 // queueName：队列名，必填参数
-// consumer：为空时，自动生成
 // durable：是否需要持久化
 // autoDelete：是否需要自动删除
-func NewSimpleConsumer(conn *RMQConn, queueName, consumer string, durable, autoDelete bool) (IConsumer, error) {
+func NewSimpleConsumer(conn *RMQConn, queueName string, durable, autoDelete bool) (IConsumer, error) {
 	if conn == nil {
 		return nil, ConnIsNil
 	}
@@ -129,6 +128,6 @@ func NewSimpleConsumer(conn *RMQConn, queueName, consumer string, durable, autoD
 		return nil, err
 	}
 	c := &SimpleConsumer{}
-	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, consumer, c)
+	c.BaseConsumer = NewBaseConsumer(conn, DefaultPrefetchCount, q.Name, c)
 	return c, nil
 }
