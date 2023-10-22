@@ -29,7 +29,7 @@ message 继续呆在 queue 中。之后其中 consumer 对一条消息进行 ack
 */
 
 const (
-	DefaultPrefetchCount = 500
+	DefaultPrefetchCount = 20
 )
 
 type ConsumeHandler func(payload []byte) error
