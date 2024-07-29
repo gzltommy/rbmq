@@ -45,7 +45,7 @@ func NewRoutingPublisher(conn *RMQConn, exchangeName string, durable, autoDelete
 	// 尝试创建交换机，不存在创建
 	err = channel.ExchangeDeclare(
 		r.exchangeName, //交换机名称
-		"direct",       //交换机类型 广播类型
+		"direct",       //交换机类型完全匹配类型
 		durable,        //是否持久化
 		autoDelete,     //是否字段删除
 		false,          //true 表示这个 exchange 不可以被 client 用来推送消息，仅用来进行 exchange 和 exchange 之间的绑定
@@ -124,7 +124,7 @@ func NewRoutingConsumer(conn *RMQConn, exchangeName, queueName, routingKey strin
 	// 1、尝试创建交换机，不存在创建
 	err = channel.ExchangeDeclare(
 		exchangeName, //交换机名称
-		"direct",     //交换机类型 广播类型
+		"direct",     //交换机类型完全匹配类型
 		durable,      //是否持久化
 		autoDelete,   //是否字段删除
 		false,        //true 表示这个 exchange 不可以被 client 用来推送消息，仅用来进行 exchange 和 exchange 之间的绑定
